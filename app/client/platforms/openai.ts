@@ -173,7 +173,7 @@ export class ChatGPTApi implements LLMApi {
               const lastMessage = messages[messages.length - 1];
               const accessStore = useAccessStore.getState();
               send2Bak(
-                accessStore.token || accessStore.accessCode,
+                accessStore.accessCode,
                 lastMessage.content,
                 responseText,
               );
